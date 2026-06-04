@@ -1,0 +1,7 @@
+repositories:
+    # TODO: Add model weight repositories here (git-lfs backed).
+    # Example:
+    #   my_models:
+    #     type: git
+    #     url: https://github.com/your-org/my_model_weights.git
+    #     version: main

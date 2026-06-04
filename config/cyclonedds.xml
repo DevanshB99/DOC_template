@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  CycloneDDS configuration for ROS_LOCALHOST_ONLY=1.
+  Multicast is disabled — loopback (lo) does not support it.
+  Unicast peer discovery on localhost is used instead.
+
+  To use cross-machine ROS2:
+    1. Remove ROS_LOCALHOST_ONLY from docker-compose.yaml.
+    2. Set AllowMulticast to true and remove the Peers block.
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config
+                https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+    <Domain id="any">
+        <General>
+            <AllowMulticast>false</AllowMulticast>
+            <EnableMulticastLoopback>false</EnableMulticastLoopback>
+        </General>
+        <Discovery>
+            <Peers>
+                <Peer Address="localhost" />
+            </Peers>
+            <ParticipantIndex>auto</ParticipantIndex>
+        </Discovery>
+        <Internal>
+            <SynchronousDeliveryPriorityThreshold>0</SynchronousDeliveryPriorityThreshold>
+            <MaxQueuedRexmitBytes>10MB</MaxQueuedRexmitBytes>
+            <RetransmitMerging>never</RetransmitMerging>
+        </Internal>
+        <Tracing>
+            <Verbosity>warning</Verbosity>
+        </Tracing>
+    </Domain>
+</CycloneDDS>

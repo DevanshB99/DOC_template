@@ -1,0 +1,36 @@
+# ROS2 CLI tools
+ros-humble-ros2run
+ros-humble-ros2launch
+ros-humble-ros2topic
+ros-humble-ros2interface
+ros-humble-ros2action
+ros-humble-ros2doctor
+ros-humble-rqt*
+
+# Camera & Vision
+ros-humble-image-transport
+ros-humble-image-transport-plugins
+ros-humble-camera-info-manager
+ros-humble-compressed-image-transport
+ros-humble-usb-cam
+ros-humble-v4l2-camera
+ros-humble-image-proc
+
+# Motor & Control
+ros-humble-ros2-control
+ros-humble-ros2-controllers
+ros-humble-controller-manager
+ros-humble-serial-driver
+
+# Robot Description & Visualization
+ros-humble-xacro
+ros-humble-robot-state-publisher
+ros-humble-joint-state-publisher
+ros-humble-joint-state-publisher-gui
+ros-humble-rviz2
+
+# TODO: Add your project-specific ROS2 packages below
+# ros-humble-navigation2
+# ros-humble-slam-toolbox
+# ros-humble-pcl-ros
+# ros-humble-depth-image-proc

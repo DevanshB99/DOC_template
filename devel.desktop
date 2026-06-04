@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+# TODO: Change Name and Comment to match your project
+Name=Development
+Comment=Launch container in development mode
+Exec=terminator --new-tab -e "bash -c 'source ~/.local/share/applications/doc-template/.env && ~/.local/share/applications/doc-template/launch_container.sh; exec bash'"
+Terminal=false
+Categories=Development;

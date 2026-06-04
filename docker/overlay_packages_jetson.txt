@@ -1,0 +1,8 @@
+# Jetson-only packages — installed from the Isaac ROS apt repository.
+# The repo is added automatically in the Dockerfile when PLATFORM_TYPE=jetson.
+# Uncomment what your project needs.
+
+# ros-humble-isaac-ros-image-proc
+# ros-humble-isaac-ros-stereo-image-proc
+# ros-humble-isaac-ros-nitros
+# ros-humble-isaac-ros-visual-slam

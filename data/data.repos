@@ -1,0 +1,7 @@
+repositories:
+    # TODO: Add your data repositories here (e.g., model weights, datasets)
+    # Example:
+    #   my_models:
+    #     type: git
+    #     url: https://github.com/username/my_model_data.git
+    #     version: main

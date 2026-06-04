@@ -1,0 +1,280 @@
+# cgroup device rules: ALSA(116), input(13), ttyUSB(188), ttyACM(166), USB(189), v4l2(81)
+x-hw-cgroup-rules: &hw-cgroup-rules
+  - 'c 116:* rmw'
+  - 'c 13:* rmw'
+  - 'c 188:* rmw'
+  - 'c 166:* rmw'
+  - 'c 189:* rmw'
+  - 'c 81:* rmw'
+
+x-common-env: &common-env
+  DISPLAY: ${DISPLAY}
+  QT_X11_NO_MITSHM: "1"
+  XAUTHORITY: /tmp/.docker.xauth
+  ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+  RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+  FASTRTPS_DEFAULT_PROFILES_FILE: ${FASTRTPS_DEFAULT_PROFILES_FILE:-/config/fastdds.xml}
+  CYCLONEDDS_URI: ${CYCLONEDDS_URI:-/config/cyclonedds.xml}
+  ROS_LOCALHOST_ONLY: "1"
+  PULSE_SERVER: ${PULSE_SERVER:-unix:/run/user/${UID:-1000}/pulse/native}
+  OLLAMA_HOST: ${OLLAMA_HOST:-http://127.0.0.1:11434}
+
+x-nvidia-env: &nvidia-env
+  <<: *common-env
+  NVIDIA_VISIBLE_DEVICES: all
+  NVIDIA_DRIVER_CAPABILITIES: all
+  EGL_PLATFORM: device
+
+x-mac-env: &mac-env
+  <<: *common-env
+  DISPLAY: ${DOCKER_DISPLAY:-:0}
+  QT_OPENGL: software
+  QT_QUICK_BACKEND: software
+  QT_XCB_GL_INTEGRATION: none
+  OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+  PULSE_SERVER: ${PULSE_SERVER:-tcp:host.docker.internal:4713}
+
+x-common-volumes: &common-volumes
+  - /tmp/.X11-unix:/tmp/.X11-unix:rw
+  - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+  - ./src:/workspaces/shared_ws/src:rw
+  - ./agents:/workspaces/agents:rw
+  - ./data:/data:rw
+  - ./models:/models:rw
+  - ./config:/config:rw
+  - /dev:/dev
+  - /run/user/${UID:-1000}/pulse:/run/user/${UID:-1000}/pulse:ro
+
+x-jetson-volumes: &jetson-volumes
+  - /tmp/.X11-unix:/tmp/.X11-unix:rw
+  - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+  - ./src:/workspaces/shared_ws/src:rw
+  - ./agents:/workspaces/agents:rw
+  - ./data:/data:rw
+  - ./models:/models:rw
+  - ./config:/config:rw
+  - /dev:/dev
+  - /run/user/${UID:-1000}/pulse:/run/user/${UID:-1000}/pulse:ro
+  - /tmp/argus_socket:/tmp/argus_socket
+  - /proc/device-tree/compatible:/proc/device-tree/compatible:ro
+  - /proc/device-tree/chosen:/proc/device-tree/chosen:ro
+  - /usr/lib/aarch64-linux-gnu/nvidia:/host-nvidia-libs:ro
+
+x-common-build-args: &common-build-args
+  ROS_DISTRO: humble
+  USERNAME: ${USERNAME:-doc_user}
+  UID: ${UID:-1000}
+  GID: ${UID:-1000}
+  VIDEO_GID: 44
+  DIALOUT_GID: 20
+  AUDIO_GID: ${AUDIO_GID:-29}
+  INPUT_GID: ${INPUT_GID:-105}
+  PLUGDEV_GID: ${PLUGDEV_GID:-46}
+
+x-common-service: &common-service
+  container_name: ${CONTAINER_NAME:-doc_template}
+  image: ${CONTAINER_NAME:-doc_template}:humble
+  stdin_open: true
+  tty: true
+  working_dir: /workspaces/shared_ws
+  user: ${USERNAME:-doc_user}
+  command: ["/bin/bash"]
+
+services:
+  linux:
+    <<: *common-service
+    profiles: ["linux"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: osrf/ros:humble-desktop-full
+        PLATFORM_TYPE: desktop
+        TORCH_INSTALL: cpu
+    network_mode: host
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+    device_cgroup_rules: *hw-cgroup-rules
+
+  linux-gpu:
+    <<: *common-service
+    profiles: ["linux-gpu"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: osrf/ros:humble-desktop-full
+        PLATFORM_TYPE: gpu
+        TORCH_INSTALL: gpu
+    network_mode: host
+    environment:
+      <<: *nvidia-env
+    volumes: *common-volumes
+    device_cgroup_rules: *hw-cgroup-rules
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility, compute, graphics]
+
+  jetson:
+    <<: *common-service
+    profiles: ["jetson"]
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      network: host
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: nvcr.io/nvidia/isaac/ros:aarch64-ros2_humble_d33953d7abe50ce895998252e51aca25
+        PLATFORM_TYPE: jetson
+        TORCH_INSTALL: skip
+        I2C_GID: 121
+        GPIO_GID: 999
+        ONNXRUNTIME_STAGE: dustynv/onnxruntime:1.20.2-r36.4.0
+    network_mode: host
+    ipc: host
+    runtime: nvidia
+    privileged: true
+    group_add:
+      - "104"    # render — /dev/dri/renderD128 (EGL/GPU, not in /etc/group on Isaac ROS base)
+    environment:
+      <<: *nvidia-env
+      BLINKA_JETSON: "1"
+      LD_LIBRARY_PATH: "/host-nvidia-libs"
+    volumes: *jetson-volumes
+    device_cgroup_rules:
+      - 'c *:* rmw'
+
+  mac:
+    <<: *common-service
+    profiles: ["mac"]
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: osrf/ros:humble-desktop
+        PLATFORM_TYPE: desktop
+        TORCH_INSTALL: cpu
+    network_mode: bridge
+    # TODO: Expose additional ports your application needs
+    ports:
+      - "8000:8000"
+      - "8888:8888"
+    environment:
+      <<: *mac-env
+    volumes: *common-volumes
+
+  windows:
+    <<: *common-service
+    profiles: ["windows"]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: osrf/ros:humble-desktop-full
+        PLATFORM_TYPE: desktop
+        TORCH_INSTALL: cpu
+    network_mode: bridge
+    # TODO: Expose additional ports your application needs
+    ports:
+      - "8000:8000"
+      - "8888:8888"
+    environment:
+      <<: *common-env
+      DISPLAY: ${DISPLAY:-:0}
+    volumes: *common-volumes
+    device_cgroup_rules: *hw-cgroup-rules
+
+  rpi:
+    <<: *common-service
+    profiles: ["rpi"]
+    platform: linux/arm64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        <<: *common-build-args
+        BASE_IMAGE: arm64v8/ros:humble-perception
+        PLATFORM_TYPE: desktop
+        TORCH_INSTALL: cpu
+    network_mode: host
+    group_add:
+      - "${RPI_I2C_GID:-997}"    # host-side I2C GID — not in container /etc/group
+    device_cgroup_rules: *hw-cgroup-rules
+    environment:
+      <<: *common-env
+    volumes: *common-volumes
+
+  # Ollama sidecar — starts automatically with the profile.
+  # Set OLLAMA_HOST in .env to use a remote instance instead (mac: run Ollama natively for Metal GPU).
+
+  ollama-gpu:
+    image: ollama/ollama:latest
+    profiles: ["linux-gpu"]
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - ./ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  ollama-cpu:
+    image: ollama/ollama:latest
+    profiles: ["linux", "rpi", "windows"]
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  ollama-jetson:
+    image: ollama/ollama:latest
+    profiles: ["jetson"]
+    network_mode: host
+    runtime: nvidia
+    restart: unless-stopped
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      OLLAMA_KEEP_ALIVE: 5m
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - ./ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s

@@ -1,0 +1,35 @@
+# Serial / GPIO
+pyserial
+
+# Core scientific computing
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0,<1.14.0
+matplotlib>=3.7.0
+pillow>=10.0.0,<11.0.0
+
+# Audio
+sounddevice>=0.4.6
+
+# Web / API backend
+fastapi>=0.104.0,<0.116.0
+uvicorn[standard]>=0.24.0,<0.32.0
+pydantic>=2.5.0,<2.10.0
+websockets>=12.0,<14.0
+
+# Utilities
+requests>=2.31.0,<2.33.0
+pyyaml>=6.0
+tqdm>=4.66.0
+
+# TODO: Uncomment / add dependencies your project needs:
+
+# Vision
+# onnxruntime>=1.16.0        (CPU; GPU variant handled in Dockerfile per platform)
+# torch / torchvision        (installed in Dockerfile via TORCH_INSTALL arg)
+# PySide6>=6.6.0             (Qt6 GUI; XCB system libs already in packages.txt)
+
+# Audio / STT
+# faster-whisper>=1.0.0
+# openai-whisper>=20231117
+# openwakeword>=0.6.0
+

@@ -1,0 +1,28 @@
+# Environment
+.env
+.DS_Store
+
+# ROS2 workspace
+src/*/
+!src/src.repos
+
+# Data / models
+data/*
+!data/data.repos
+models/*
+!models/models.repos
+
+# Arduino CLI
+arduino/bin/
+arduino/data/
+arduino/downloads/
+arduino/user/
+arduino/tmp/
+arduino/extra-libraries/
+
+# Ollama models
+ollama_models/
+
+# IDE / tooling
+.vscode/
+.claude/

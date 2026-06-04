@@ -1,0 +1,8 @@
+repositories:
+    # TODO: Add your ROS2 package repositories here.
+    # Run vcs import src < src/src.repos to clone them after adding.
+    # Example:
+    #   my_package:
+    #     type: git
+    #     url: https://github.com/your-org/my_ros2_package.git
+    #     version: main
